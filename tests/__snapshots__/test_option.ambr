@@ -1,0 +1,34 @@
+# serializer version: 1
+# name: test_find_options_delta_gt[delta_gt=0.3]
+  list([
+    Option(id='c_k=200_exp=40_delta=0.4', position=None),
+    Option(id='c_k=100_exp=20_delta=0.6', position=None),
+  ])
+# ---
+# name: test_find_options_delta_gt[delta_gt=0.5]
+  list([
+    Option(id='c_k=100_exp=20_delta=0.6', position=None),
+  ])
+# ---
+# name: test_find_options_delta_lt[delta_lt=0.5]
+  list([
+    Option(id='c_k=200_exp=40_delta=0.4', position=None),
+  ])
+# ---
+# name: test_find_options_delta_lt[delta_lt=0.7]
+  list([
+    Option(id='c_k=100_exp=20_delta=0.6', position=None),
+    Option(id='c_k=200_exp=40_delta=0.4', position=None),
+  ])
+# ---
+# name: test_find_options_expiration_gt[expiration_gt=30]
+  list([
+    Option(id='c_k=200_exp=40_delta=0.4', position=None),
+  ])
+# ---
+# name: test_find_options_sort_by_delta_near[sort_by_delta_near=0.45]
+  list([
+    Option(id='c_k=200_exp=40_delta=0.4', position=None),
+    Option(id='c_k=100_exp=20_delta=0.6', position=None),
+  ])
+# ---

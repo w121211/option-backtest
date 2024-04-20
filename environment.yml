@@ -1,0 +1,16 @@
+name: optionbacktest
+channels:
+  - defaults
+  - plotly
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - plotly
+  - pytest
+  - pip
+  - pip:
+      - syrupy
+prefix: /Users/cw/miniconda3/envs/optionbacktest

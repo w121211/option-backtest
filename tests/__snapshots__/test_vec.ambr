@@ -1,0 +1,34 @@
+# serializer version: 1
+# name: test_calculate_portfolio_values
+  '''
+              AAA_price  AAA_position  BBB_price  BBB_position  AAA_position_change  AAA_cash_flow  AAA_value  BBB_position_change  BBB_cash_flow  BBB_value  cash_balance  portfolio_value
+  date                                                                                                                                                                                     
+  2023-01-01         10             0         20             0                  0.0           -0.0          0                  0.0           -0.0          0           0.0              0.0
+  2023-01-02         11             1         21            -1                  1.0          -11.0         11                 -1.0           21.0        -21          10.0              0.0
+  2023-01-03         12             2         22             1                  1.0          -12.0         24                  2.0          -44.0         22         -46.0              0.0
+  2023-01-04         13             2         23            -2                  0.0           -0.0         26                 -3.0           69.0        -46          23.0              3.0
+  2023-01-05         14             3         24             0                  1.0          -14.0         42                  2.0          -48.0          0         -39.0              3.0
+  '''
+# ---
+# name: test_generate_options
+  list([
+    Option(id='XYZ230630C00050000', option_type='call', strike=50, expiry_date='2023-06-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230630C00060000', option_type='call', strike=60, expiry_date='2023-06-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230630C00070000', option_type='call', strike=70, expiry_date='2023-06-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230630P00050000', option_type='put', strike=50, expiry_date='2023-06-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230630P00060000', option_type='put', strike=60, expiry_date='2023-06-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230630P00070000', option_type='put', strike=70, expiry_date='2023-06-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230930C00050000', option_type='call', strike=50, expiry_date='2023-09-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230930C00060000', option_type='call', strike=60, expiry_date='2023-09-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230930C00070000', option_type='call', strike=70, expiry_date='2023-09-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230930P00050000', option_type='put', strike=50, expiry_date='2023-09-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230930P00060000', option_type='put', strike=60, expiry_date='2023-09-30', position=None, entry_date='None', exit_date='None'),
+    Option(id='XYZ230930P00070000', option_type='put', strike=70, expiry_date='2023-09-30', position=None, entry_date='None', exit_date='None'),
+  ])
+# ---
+# name: test_rollover_short_atm_calls
+  list([
+    Option(id='XYZ230630C00050000', option_type='call', strike=50, expiry_date='2023-06-30', position=-1, entry_date='2023-01-01', exit_date='2023-07-01'),
+    Option(id='XYZ230930C00060000', option_type='call', strike=60, expiry_date='2023-09-30', position=-1, entry_date='2023-07-01', exit_date='None'),
+  ])
+# ---

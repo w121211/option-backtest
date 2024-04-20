@@ -1,0 +1,15 @@
+# serializer version: 1
+# name: test_after_market_expired_call_exercised
+  dict({
+    'XYZ_C_110_10': Option(id='XYZ_C_110_10', position=1),
+  })
+# ---
+# name: test_after_market_expired_call_exercised.1
+  Account(cash=-8000, stock=Stock(id='XYZ', position=100), options={'XYZ_C_110_10': Option(id='XYZ_C_110_10', position=1)})
+# ---
+# name: test_execute_trades
+  Account(cash=993, stock=Stock(id='XYZ', position=0), options={'XYZ_C_110_10': Option(id='XYZ_C_110_10', position=2), 'XYZ_P_90_m1': Option(id='XYZ_P_90_m1', position=-1)})
+# ---
+# name: test_execute_trades.1
+  Account(cash=-7, stock=Stock(id='XYZ', position=10), options={'XYZ_C_110_10': Option(id='XYZ_C_110_10', position=2), 'XYZ_P_90_m1': Option(id='XYZ_P_90_m1', position=-1)})
+# ---
