@@ -23,7 +23,7 @@
 # ---
 # name: test_find_options_expiration_gt[expiration_gt=30]
   list([
-    Option(id='c_k=200_exp=40_delta=0.4', position=None),
+    Option(id='c_k=200_exp=40_delta=0.4', position=0),
   ])
 # ---
 # name: test_find_options_sort_by_delta_near[sort_by_delta_near=0.45]

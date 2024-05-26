@@ -1,0 +1,33 @@
+# serializer version: 1
+# name: test_generate_options
+  dict({
+    'XYZ230630C00090000': Option(id='XYZ230630C00090000', position=0),
+    'XYZ230630C00100000': Option(id='XYZ230630C00100000', position=0),
+    'XYZ230630C00110000': Option(id='XYZ230630C00110000', position=0),
+    'XYZ230630P00090000': Option(id='XYZ230630P00090000', position=0),
+    'XYZ230630P00100000': Option(id='XYZ230630P00100000', position=0),
+    'XYZ230630P00110000': Option(id='XYZ230630P00110000', position=0),
+    'XYZ231231C00090000': Option(id='XYZ231231C00090000', position=0),
+    'XYZ231231C00100000': Option(id='XYZ231231C00100000', position=0),
+    'XYZ231231C00110000': Option(id='XYZ231231C00110000', position=0),
+    'XYZ231231P00090000': Option(id='XYZ231231P00090000', position=0),
+    'XYZ231231P00100000': Option(id='XYZ231231P00100000', position=0),
+    'XYZ231231P00110000': Option(id='XYZ231231P00110000', position=0),
+  })
+# ---
+# name: test_generate_options.1
+  '''
+                  price     delta
+  2023-01-01  14.934464  0.820985
+  2023-01-02  23.741388  0.931291
+  2023-01-03  33.301941  0.977553
+  '''
+# ---
+# name: test_generate_options.2
+  '''
+                 price     delta
+  2023-01-01  1.776899 -0.179015
+  2023-01-02  0.601055 -0.068709
+  2023-01-03  0.178845 -0.022447
+  '''
+# ---

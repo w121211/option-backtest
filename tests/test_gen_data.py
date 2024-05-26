@@ -8,10 +8,11 @@ from src.option_backtest.market import Stock
 from src.option_backtest.gen_data import (
     black_scholes_vectorized,
     generate_options,
+    parse_option_id,
 )
 
 
-# -------- Test Black Scholes ------
+# -------- Test Black Scholes --------
 
 
 def test_black_scholes_vectorized_call():
@@ -61,8 +62,8 @@ def test_black_scholes_vectorized_pandas():
 
     price, delta = black_scholes_vectorized(S, K, T, r, sigma, option_type)
 
-    pd.testing.assert_series_equal(price, expected_price, atol=1e-4)
-    pd.testing.assert_series_equal(delta, expected_delta, atol=1e-4)
+    pd.testing.assert_series_equal(price, expected_price, atol=1e-4)  # type: ignore
+    pd.testing.assert_series_equal(delta, expected_delta, atol=1e-4)  # type: ignore
 
 
 def test_black_scholes_vectorized_invalid_option_type():
@@ -166,7 +167,42 @@ def test_generate_options(snapshot):
 
     # Call the generate_options function
     options = generate_options(stock, strikes, expiry_dates, r, sigma)
-    opt_0_df = list(options.values())[0].df
+
+    calls = [opt for opt in options.values() if opt.option_type == "call"]
+    puts = [opt for opt in options.values() if opt.option_type == "put"]
 
     assert options == snapshot
-    assert opt_0_df.to_string() == snapshot
+    assert calls[0].df.to_string() == snapshot
+    assert puts[0].df.to_string() == snapshot
+
+
+class TestOptionParser:
+    def test_parse_option_id_valid_call_option(self):
+        option_id = "UBER220121C00050000"
+        expected_result = ("UBER", datetime(2022, 1, 21), "call", 50.0)
+        assert parse_option_id(option_id) == expected_result
+
+    def test_parse_option_id_valid_put_option(self):
+        option_id = "F211119P00014500"
+        expected_result = ("F", datetime(2021, 11, 19), "put", 14.5)
+        assert parse_option_id(option_id) == expected_result
+
+    def test_parse_option_id_invalid_option_type(self):
+        option_id = "UBER220121X00050000"
+        with pytest.raises(
+            ValueError,
+            match="Invalid option type. Must be 'C' for Call or 'P' for Put.",
+        ):
+            parse_option_id(option_id)
+
+    def test_parse_option_id_invalid_expiration_date_format(self):
+        option_id = "UBER22012AC00050000"
+        with pytest.raises(ValueError, match="unconverted data remains: A"):
+            parse_option_id(option_id)
+
+    def test_parse_option_id_invalid_strike_price_format(self):
+        option_id = "UBER220121C0005000A"
+        with pytest.raises(
+            ValueError, match="invalid literal for int\(\) with base 10: '0005000A'"
+        ):
+            parse_option_id(option_id)

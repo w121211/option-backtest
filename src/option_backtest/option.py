@@ -1,12 +1,9 @@
 from datetime import datetime, timedelta
-from typing import Literal, TypedDict
+from typing import Callable, Literal, TypedDict
 from typing_extensions import NotRequired
 import pandas as pd
 
 from .market import Option
-
-
-# -------- Rollover --------
 
 
 FindOptionsBy = TypedDict(
@@ -20,6 +17,8 @@ FindOptionsBy = TypedDict(
         "dte_lt": NotRequired[int],
         # Filter options by the delta is greater than x. Use this to filter ITM options by delta > 0.5.
         "delta_gt": NotRequired[float],
+        # Filter options by the "days to expiration" within a range (min_days, max_days).
+        "dte_range": NotRequired[tuple[int, int]],
         # Filter options by the delta is less than x. Use this to filter OTM options by delta < 0.5.
         "delta_lt": NotRequired[float],
         # Sort by delta near x
@@ -57,6 +56,14 @@ def find_options(
             if (op.expiry_date - current_date).days < dte_lt
         ]
 
+    if attrs.get("dte_range"):
+        min_days, max_days = attrs["dte_range"]  # type: ignore
+        filtered_options = [
+            op
+            for op in filtered_options
+            if min_days <= (op.expiry_date - current_date).days < max_days
+        ]
+
     if attrs.get("delta_gt"):
         delta_gt = attrs["delta_gt"]  # type: ignore
         filtered_options = [
@@ -80,12 +87,53 @@ def find_options(
     # Sort options by delta near the specified value
     if attrs.get("sort_by_delta_near"):
         delta_near = attrs["sort_by_delta_near"]  # type: ignore
-        filtered_options = sorted(
-            filtered_options,
-            key=lambda op: abs(op.df.at[current_date, "delta"] - delta_near),
-        )
+
+        def sort_key(op):
+            try:
+                return abs(op.df.at[current_date, "delta"] - delta_near)
+            except KeyError:
+                return float("inf")
+
+        filtered_options = sorted(filtered_options, key=sort_key)
 
     return filtered_options
+
+
+# FindOptionsCondition = tuple[
+#     Literal["delta", "dte", "option_type"], Callable[[float | str], bool]
+# ]
+
+
+# def find_options(
+#     listed_options: dict[str, Option],
+#     current_stock_price: float,
+#     current_date: pd.Timestamp,
+#     conditions: list[FindOptionsCondition],
+#     sort_by_delta_near: float | None = None,
+# ) -> list[Option]:
+#     def apply_conditions(op: Option) -> bool:
+#         for cond_type, cond_func in conditions:
+#             if cond_type == "delta":
+#                 if not cond_func(op.df.at[current_date, "delta"]):
+#                     return False
+#             elif cond_type == "dte":
+#                 dte = (op.expiry_date - current_date).days
+#                 if not cond_func(dte):
+#                     return False
+#             elif cond_type == "option_type":
+#                 if not cond_func(op.option_type):
+#                     return False
+#         return True
+
+#     filtered_options = [op for op in listed_options.values() if apply_conditions(op)]
+
+#     if sort_by_delta_near is not None:
+#         filtered_options = sorted(
+#             filtered_options,
+#             key=lambda op: abs(op.df.at[current_date, "delta"] - sort_by_delta_near),
+#         )
+
+#     return filtered_options
 
 
 def should_rollover(option: Option, current_date: datetime) -> bool:

@@ -81,24 +81,27 @@ def gbm_prices(
     return prices
 
 
-def generate_and_save_stock_data(
+def generate_stock_data(
     s0: float,
     mu: float,
     sigma: float,
     dt: float,
     start_date: datetime,
     end_date: datetime,
-    output_path: str,
-):
+    output_path: str | None = None,
+) -> pd.DataFrame:
     n_steps = (end_date - start_date).days + 1
     prices = gbm_prices(s0, mu, sigma, dt, n_steps)
 
     # Generate dates
     dates = [start_date + timedelta(days=int(i)) for i in range(n_steps)]
 
-    # Save stock prices to CSV
-    stock_data = pd.DataFrame({"date": dates, "price": prices})
-    stock_data.to_csv(output_path, index=False)
+    if output_path is not None:
+        # Save stock prices to CSV
+        stock_data = pd.DataFrame({"date": dates, "price": prices})
+        stock_data.to_csv(output_path, index=False)
+
+    return stock_data
 
 
 def generate_and_save_option_data(
@@ -173,62 +176,6 @@ def black_scholes(S, K, T, r, sigma, option_type: Literal["call", "put"]):
         raise ValueError("Invalid option_type. Must be 'call' or 'put'.")
 
     return price
-
-
-def black_scholes_vectorized_old(
-    S: Union[np.ndarray, pd.Series],
-    K: float,
-    T: Union[np.ndarray, pd.Series],
-    r: float,
-    sigma: float,
-    option_type: str,
-) -> Union[np.ndarray, pd.Series]:
-    """
-    Vectorized Black-Scholes formula, modified to handle cases where T <= 0
-    by setting the option price to zero.
-
-    Parameters:
-    - S: Stock price (np.ndarray or pd.Series)
-    - K: Strike price (float)
-    - T: Time to maturity in years (np.ndarray or pd.Series)
-    - r: Risk-free interest rate (float)
-    - sigma: Volatility of the underlying asset (float)
-    - option_type: 'call' or 'put' (str)
-
-    Returns:
-    - Option price (np.ndarray or pd.Series)
-    """
-
-    # Initialize option_price as zeros
-    if isinstance(T, np.ndarray):
-        option_price = np.zeros_like(T, dtype=np.float64)
-    elif isinstance(T, pd.Series):
-        option_price = pd.Series(np.zeros(len(T)), dtype=np.float64, index=T.index)
-
-    # Ensure T is non-negative, else set option price to 0
-    mask_T = T > 0
-    S_filtered = S[mask_T]  # Filter S as well to match the filtered T's dimensions
-    T_filtered = T[mask_T]
-
-    if np.any(mask_T):  # Proceed only if there are any valid T values
-        d1 = (np.log(S_filtered / K) + (r + 0.5 * sigma**2) * T_filtered) / (
-            sigma * np.sqrt(T_filtered)
-        )
-        d2 = d1 - sigma * np.sqrt(T_filtered)
-
-        if option_type == "call":
-            option_price[mask_T] = S_filtered * norm.cdf(d1) - K * np.exp(
-                -r * T_filtered
-            ) * norm.cdf(d2)
-        elif option_type == "put":
-            option_price[mask_T] = K * np.exp(-r * T_filtered) * norm.cdf(
-                -d2
-            ) - S_filtered * norm.cdf(-d1)
-        else:
-            raise ValueError("Invalid option_type. Must be 'call' or 'put'.")
-    # For T <= 0, option_price remains zero as initialized
-
-    return option_price
 
 
 def black_scholes_vectorized(
@@ -323,9 +270,9 @@ def calculate_option_price(
 
     # Calculate option prices using the Black-Scholes model
     option_price, option_delta = black_scholes_vectorized(
-        stock_price_df["price"].values,
+        stock_price_df["price"].values,  # type: ignore
         strike,
-        time_to_maturity.values,
+        time_to_maturity.values,  # type: ignore
         r,
         sigma,
         option_type,
@@ -349,6 +296,42 @@ def calculate_option_price(
 # ------------------------------------------------------------
 
 
+def get_option_id(
+    stock_id: str,
+    strike: float,
+    expiry_date: pd.Timestamp,
+    option_type: Literal["call", "put"],
+):
+    """The option ID is constructed following the convention described in:
+    https://polygon.io/blog/how-to-read-a-stock-options-ticker"""
+
+    expiry_date_str = expiry_date.strftime("%y%m%d")
+    strike_price_str = f"{int(abs(strike) * 1000):08d}"
+    opt_id = f"{stock_id}{expiry_date_str}{'C' if option_type == 'call' else 'P'}{strike_price_str}"
+
+    return opt_id
+
+
+def parse_option_id(
+    option_id: str,
+) -> tuple[str, datetime, Literal["call", "put"], float]:
+    stock_id = option_id[: len(option_id) - 15]
+    expiry_date = option_id[-15:-9]
+    option_type = option_id[-9]
+    strike_price = int(option_id[-8:]) / 1000
+
+    expiry_date = datetime.strptime(expiry_date, "%y%m%d")
+
+    if option_type == "C":
+        option_type = "call"
+    elif option_type == "P":
+        option_type = "put"
+    else:
+        raise ValueError("Invalid option type. Must be 'C' for Call or 'P' for Put.")
+
+    return stock_id, expiry_date, option_type, strike_price
+
+
 def generate_options(
     stock: Stock,
     strikes: np.ndarray,
@@ -358,9 +341,6 @@ def generate_options(
 ) -> dict[str, Option]:
     """
     Generate a dictionary of call and put options for the given stock, with the specified strike prices and expiry dates.
-
-    The option ID is constructed following the convention described in:
-    https://polygon.io/blog/how-to-read-a-stock-options-ticker
 
     Parameters:
     - stock: The underlying Stock object for which the options are generated.
@@ -376,15 +356,13 @@ def generate_options(
     for expiry_date in expiry_dates:
         for opt_type in ["call", "put"]:
             for strike in strikes:
-                expiry_date_str = expiry_date.strftime("%y%m%d")
-                strike_price_str = f"{int(abs(strike) * 1000):08d}"
-                opt_id = f"{stock.id}{expiry_date_str}{'C' if opt_type == 'call' else 'P'}{strike_price_str}"
+                opt_id = get_option_id(stock.id, strike, expiry_date, opt_type)  # type: ignore
                 opt_df = calculate_option_price(
                     stock.df, expiry_date, strike, opt_type, r, sigma
                 )
                 opt = Option(
                     id=opt_id,
-                    option_type=opt_type,
+                    option_type=opt_type,  # type: ignore
                     strike=strike,
                     expiry_date=expiry_date,
                     df=opt_df,

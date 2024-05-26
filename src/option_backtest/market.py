@@ -1,7 +1,6 @@
 import copy
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from typing import Literal, Protocol
 
 import numpy as np
@@ -53,34 +52,38 @@ class Account:
 class Trade:
     asset_type: Literal["stock", "option"]
     asset_id: str
-    position: int
+    amount: int
     date: pd.Timestamp
 
+@dataclass
+class MarketState:
+    listed_options: dict[str, Option]
+    account: Account
+    current_date: pd.Timestamp
+    current_step: int
 
-class StrategyFunc(Protocol):
-    def __call__(
-        self,
-        listed_options: dict[str, Option],
-        account: Account,
-        current_date: pd.Timestamp,
-    ) -> list[Trade]: ...
+
+class OnTradeFn(Protocol):
+    def __call__(self, state: MarketState) -> list[Trade]: ...
 
 
 def execute_trades(
-    listed_options: dict[str, Option],
-    account: Account,
-    current_date: pd.Timestamp,
+    state: MarketState,
     trades: list[Trade],
 ) -> Account:
+    listed_options = state.listed_options
+    account = state.account
+    current_date = state.current_date
+
     for trade in trades:
         if trade.asset_type == "stock":
             stock = account.stock
             stock_price = stock.df.at[current_date, "price"]
-            stock.position += trade.position
-            account.cash -= stock_price * trade.position
+            stock.position += trade.amount
+            account.cash -= stock_price * trade.amount
 
             logger.info(
-                f"Executed trade: {trade.asset_id} @ {stock_price:.2f} * {trade.position}, Stock position: {stock.position}, Cash: {account.cash:.2f}"
+                f"Executed trade [{current_date.strftime("%Y-%m-%d")}] {trade.asset_id} @ {stock_price:.2f} * {trade.amount}, Stock position: {stock.position}, Cash: {account.cash:.2f}"
             )
 
         elif trade.asset_type == "option":
@@ -91,19 +94,23 @@ def execute_trades(
 
             opt = account.options[trade.asset_id]
             opt_price = opt.df.at[current_date, "price"]
-            opt.position += trade.position
-            account.cash -= opt_price * trade.position * 100
+            opt.position += trade.amount
+            account.cash -= opt_price * trade.amount * 100
 
             logger.info(
-                f"Executed trade: {trade.asset_id} @ {opt_price:.2f} * {trade.position}, Option position: {opt.position}, Cash: {account.cash:.2f}"
+                f"Executed trade[{current_date.strftime("%Y-%m-%d")}] {trade.asset_id} @ {opt_price:.2f} * {trade.amount}, Option position: {opt.position}, Cash: {account.cash:.2f}"
             )
 
     return account
 
 
 def after_market(
-    listed_options: dict[str, Option], account: Account, current_date: pd.Timestamp
+    state: MarketState
 ) -> tuple[dict[str, Option], Account]:
+    listed_options = state.listed_options
+    current_date = state.current_date
+    account = state.account
+
     # Remove expired options from available options
     listed_options = {
         opt_id: opt
@@ -164,22 +171,28 @@ def episode(
     init_cash: float,
     listed_stock: Stock,
     listed_options: dict[str, Option],
-    strategy: StrategyFunc,
+    on_trade_fns: list[OnTradeFn],  # A list of trading functions
 ):
     account = Account(cash=init_cash, stock=listed_stock, options={})
 
     log_trades = []
     log_portfolio_values = []
 
-    for date in account.stock.df.index:
-        trades = strategy(
-            listed_options,
-            account,
-            date,
+    for i, date in enumerate(account.stock.df.index):
+        state = MarketState(
+            listed_options=listed_options,
+            account=account,
+            current_date=date,
+            current_step=i,
         )
 
-        account = execute_trades(listed_options, account, date, trades)
-        listed_options, account = after_market(listed_options, account, date)
+        trades = []
+        for on_trade in on_trade_fns:
+            _trades = on_trade(state)
+            trades.extend(_trades)
+
+        account = execute_trades(state, trades)
+        listed_options, account = after_market(state)
         portfolio_value = calculate_portfolio_value(account, date)
 
         log_trades.extend(trades)

@@ -5,10 +5,17 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python Debugger: protective_put.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/example/strategy/protective_put.py",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Python Debugger: Module",
       "type": "debugpy",
       "request": "launch",
-      "module": "src.backtest.backtest_event"
+      "module": "option_backtest.bt_event"
     }
   ]
 }

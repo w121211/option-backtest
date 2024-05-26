@@ -56,7 +56,7 @@ def test_find_options_expiration_gt(current_date, listed_options, snapshot):
         listed_options,
         current_stock_price=150,
         current_date=current_date,
-        finder={"option_type": "call", "expiration_gt": 30},
+        attrs={"option_type": "call", "dte_gt": 30},
     )
     assert actual == snapshot(name="expiration_gt=30")
 
@@ -66,7 +66,7 @@ def test_find_options_delta_gt(current_date, listed_options, snapshot):
         listed_options,
         current_stock_price=150,
         current_date=current_date,
-        finder={"option_type": "call", "delta_gt": 0.5},
+        attrs={"option_type": "call", "delta_gt": 0.5},
     )
     assert actual0 == snapshot(name="delta_gt=0.5")
 
@@ -74,7 +74,7 @@ def test_find_options_delta_gt(current_date, listed_options, snapshot):
         listed_options,
         current_stock_price=150,
         current_date=current_date,
-        finder={"option_type": "call", "delta_gt": 0.3},
+        attrs={"option_type": "call", "delta_gt": 0.3},
     )
     assert actual1 == snapshot(name="delta_gt=0.3")
 
@@ -84,7 +84,7 @@ def test_find_options_delta_lt(current_date, listed_options, snapshot):
         listed_options,
         current_stock_price=150,
         current_date=current_date,
-        finder={"option_type": "call", "delta_lt": 0.5},
+        attrs={"option_type": "call", "delta_lt": 0.5},
     )
     assert actual0 == snapshot(name="delta_lt=0.5")
 
@@ -92,7 +92,7 @@ def test_find_options_delta_lt(current_date, listed_options, snapshot):
         listed_options,
         current_stock_price=150,
         current_date=current_date,
-        finder={"option_type": "call", "delta_lt": 0.7},
+        attrs={"option_type": "call", "delta_lt": 0.7},
     )
     assert actual1 == snapshot(name="delta_lt=0.7")
 
@@ -102,6 +102,6 @@ def test_find_options_sort_by_delta_near(current_date, listed_options, snapshot)
         listed_options,
         current_stock_price=150,
         current_date=current_date,
-        finder={"option_type": "call", "sort_by_delta_near": 0.45},
+        attrs={"option_type": "call", "sort_by_delta_near": 0.45},
     )
     assert actual == snapshot(name="sort_by_delta_near=0.45")

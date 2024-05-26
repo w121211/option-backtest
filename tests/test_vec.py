@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from scipy.stats import norm
 
-from src.option_backtest.backtest_vec import (
+from option_backtest.bt_vec import (
     calculate_portfolio_values,
     rollover_short_atm_calls,
     rollovers_to_signals,
