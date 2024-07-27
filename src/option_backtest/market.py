@@ -57,6 +57,7 @@ class Trade:
 
 @dataclass
 class MarketState:
+    stock: Stock  # Underlying stock
     listed_options: dict[str, Option]
     account: Account
     current_date: pd.Timestamp
@@ -180,6 +181,7 @@ def episode(
 
     for i, date in enumerate(account.stock.df.index):
         state = MarketState(
+            stock=listed_stock,
             listed_options=listed_options,
             account=account,
             current_date=date,
